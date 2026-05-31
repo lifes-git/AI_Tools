@@ -45,11 +45,11 @@ const parseDesignSystem = (md) => {
     const quickRefMatch = md.match(/Quick Color Reference[\s\S]*?(?:###|$)/i);
     if (quickRefMatch) {
       const quickRef = quickRefMatch[0];
-      const regex = new RegExp(`-\\s*(?:[\\*\\_]*)${name}(?:[\\*\\_]*)[^#\n]*(#[0-9A-Fa-f]{6})`, 'i');
+      const regex = new RegExp(`-\\s*(?:[\\*\\_]*)${name}(?:[\\*\\_]*)[^#\n]*(#[0-9A-Fa-f]{6}|#[0-9A-Fa-f]{3})\\b`, 'i');
       const match = quickRef.match(regex);
       if (match) return match[1];
     }
-    const regex = new RegExp(`${name}[^#\n]*(#[0-9A-Fa-f]{6})`, 'i');
+    const regex = new RegExp(`${name}[^#\n]*(#[0-9A-Fa-f]{6}|#[0-9A-Fa-f]{3})\\b`, 'i');
     const match = md.match(regex);
     return match ? match[1] : null;
   };
@@ -89,14 +89,50 @@ const parseDesignSystem = (md) => {
 
   const { fontHeading, fontBody } = getFonts();
 
-  const hexColors = md.match(/#[0-9A-Fa-f]{6}/g) || [];
+  const hexColors = md.match(/#[0-9A-Fa-f]{6}\b|#[0-9A-Fa-f]{3}\b/g) || [];
+
+  let bg = bgExtracted || (hexColors.length >= 2 ? hexColors[1] : '#ffffff');
+  let text = textExtracted || (hexColors.length >= 1 ? hexColors[0] : '#000000');
+  let primary = ctaExtracted || (hexColors.length >= 3 ? hexColors[2] : '#3b82f6');
+  let border = borderExtracted || (hexColors.length >= 4 ? hexColors[3] : 'rgba(128,128,128,0.2)');
+
+  const normalizeHex = (hex) => {
+    if (!hex || !hex.startsWith('#')) return '#000000';
+    if (hex.length === 4) {
+      return '#' + hex[1] + hex[1] + hex[2] + hex[2] + hex[3] + hex[3];
+    }
+    return hex.toLowerCase();
+  };
+
+  let normBg = normalizeHex(bg);
+  let normText = normalizeHex(text);
+
+  const getLuminance = (hex) => {
+    const rgb = parseInt(hex.slice(1), 16);
+    const r = (rgb >> 16) & 0xff;
+    const g = (rgb >> 8) & 0xff;
+    const b = (rgb >> 0) & 0xff;
+    return (r * 299 + g * 587 + b * 114) / 1000;
+  };
+
+  const bgLum = getLuminance(normBg);
+  const textLum = getLuminance(normText);
+
+  // If contrast is too low, force black or white text
+  if (Math.abs(bgLum - textLum) < 100) {
+    if (bgLum > 128) {
+      text = '#000000'; // light background, need dark text
+    } else {
+      text = '#ffffff'; // dark background, need light text
+    }
+  }
 
   return {
     theme,
-    bg: bgExtracted || (hexColors.length >= 2 ? hexColors[1] : '#ffffff'),
-    text: textExtracted || (hexColors.length >= 1 ? hexColors[0] : '#000000'),
-    primary: ctaExtracted || (hexColors.length >= 3 ? hexColors[2] : '#3b82f6'),
-    border: borderExtracted || (hexColors.length >= 4 ? hexColors[3] : 'rgba(128,128,128,0.2)'),
+    bg,
+    text,
+    primary,
+    border,
     radiusCard: radiusCardMatch ? radiusCardMatch[1] : '24px',
     radiusButton: radiusButtonMatch ? radiusButtonMatch[1] : '8px',
     fontHeading: fontHeading,
@@ -187,131 +223,121 @@ function ToolCard({ tool, onClick, getThemeColorClass, viewMode, darkMode }) {
       onClick={() => onClick(tool)}
       className={cn(
         baseCardClasses,
-        "flex-col h-full hover:-translate-y-1.5 border",
-        theme ? "hover:shadow-xl" : "bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl hover:shadow-2xl hover:shadow-black/5 dark:hover:shadow-white/5"
+        "flex-col h-full hover:-translate-y-1 border group/card",
+        theme ? "hover:shadow-2xl hover:shadow-black/5 dark:hover:shadow-white/5" : "bg-white dark:bg-zinc-900 border-zinc-200/80 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:hover:shadow-[0_8px_30px_rgb(255,255,255,0.02)]"
       )}
       style={theme ? {
         backgroundColor: isDarkMode && theme.theme !== 'dark' ? '#121212' : theme.bg,
         color: isDarkMode && theme.theme !== 'dark' ? '#ffffff' : theme.text,
         borderColor: theme.border,
-        borderRadius: theme.radiusCard,
+        borderRadius: '24px',
         fontFamily: theme.fontBody,
         '--brand-color': theme.primary
       } : {
         borderRadius: '24px',
-        borderColor: 'rgba(128,128,128,0.2)',
         '--brand-color': '#3b82f6'
       }}
     >
-      <div 
-        className={cn("relative w-full h-48 overflow-hidden", theme ? "" : "bg-zinc-100 dark:bg-zinc-800")}
-        style={{ borderTopLeftRadius: theme?.radiusCard || '24px', borderTopRightRadius: theme?.radiusCard || '24px' }}
-      >
-        {tool.thumbnailMedia ? (
-          tool.thumbnailMedia.match(/\.(mp4|webm)$/i) ? (
-            <>
-              <video
-                src={getMediaUrl(tool.thumbnailMedia)}
-                autoPlay
-                muted
-                loop
-                playsInline
-                className="w-full h-full object-cover scale-105 group-hover:scale-110 transition-transform duration-700 ease-out"
-              />
-              <div className="absolute z-10 inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent opacity-80 group-hover:opacity-60 transition-opacity duration-300" />
-            </>
-          ) : tool.thumbnailMedia.match(/vimeo\.com|youtube\.com|youtu\.be/i) ? (
-            <>
-              <iframe
-                src={getEmbedUrl(tool.thumbnailMedia, true)}
-                allow="autoplay; fullscreen; picture-in-picture"
-                className="w-full h-full scale-[1.15] group-hover:scale-[1.2] transition-transform duration-700 ease-out pointer-events-none border-0"
-              />
-              <div className="absolute z-10 inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent opacity-80 group-hover:opacity-60 transition-opacity duration-300" />
-            </>
-          ) : tool.thumbnailMedia.match(/drive\.google\.com\/file\/d\/([^/]+)/) ? (
-            <>
-              <iframe
-                src={`https://drive.google.com/file/d/${tool.thumbnailMedia.match(/drive.google.com.file.d.([^/]+)/)[1]}/preview`}
-                allow="autoplay"
-                className="w-full h-full object-cover scale-[1.05] group-hover:scale-[1.1] transition-transform duration-700 ease-out border-0"
-                style={{ pointerEvents: 'none' }}
-              />
-              <div className="absolute z-10 inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent opacity-80 group-hover:opacity-60 transition-opacity duration-300" />
-            </>
+      <div className="p-2 w-full">
+        <div 
+          className={cn("relative w-full aspect-[4/3] sm:h-[180px] overflow-hidden rounded-[18px]", theme ? "" : "bg-zinc-100 dark:bg-zinc-800")}
+        >
+          {tool.thumbnailMedia ? (
+            tool.thumbnailMedia.match(/\.(mp4|webm)$/i) ? (
+              <>
+                <video
+                  src={getMediaUrl(tool.thumbnailMedia)}
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  className="w-full h-full object-cover scale-[1.02] group-hover/card:scale-105 transition-transform duration-700 ease-out"
+                />
+              </>
+            ) : tool.thumbnailMedia.match(/vimeo\.com|youtube\.com|youtu\.be/i) ? (
+              <>
+                <iframe
+                  src={getEmbedUrl(tool.thumbnailMedia, true)}
+                  allow="autoplay; fullscreen; picture-in-picture"
+                  className="w-full h-full scale-[1.15] group-hover/card:scale-[1.2] transition-transform duration-700 ease-out pointer-events-none border-0"
+                />
+              </>
+            ) : tool.thumbnailMedia.match(/drive\.google\.com\/file\/d\/([^/]+)/) ? (
+              <>
+                <iframe
+                  src={`https://drive.google.com/file/d/${tool.thumbnailMedia.match(/drive.google.com.file.d.([^/]+)/)[1]}/preview`}
+                  allow="autoplay"
+                  className="w-full h-full object-cover scale-[1.02] group-hover/card:scale-105 transition-transform duration-700 ease-out border-0"
+                  style={{ pointerEvents: 'none' }}
+                />
+              </>
+            ) : (
+              <>
+                <img 
+                  src={getMediaUrl(tool.thumbnailMedia)} 
+                  alt={tool.name} 
+                  className="relative z-0 w-full h-full object-cover scale-[1.02] group-hover/card:scale-105 transition-transform duration-700 ease-out"
+                />
+              </>
+            )
           ) : (
             <>
-              <img 
-                src={getMediaUrl(tool.thumbnailMedia)} 
-                alt={tool.name} 
-                className="relative z-0 w-full h-full object-cover scale-105 group-hover:scale-110 transition-transform duration-700 ease-out opacity-90 group-hover:opacity-100"
-              />
-              <div className="absolute z-10 inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent opacity-80 group-hover:opacity-60 transition-opacity duration-300" />
-            </>
-          )
-        ) : (
-          <>
-            <div className="absolute inset-0 flex items-center justify-center bg-zinc-200 dark:bg-zinc-800">
-              <div className="text-6xl font-black opacity-30 text-[var(--brand-color)]">
-                {tool.name.charAt(0)}
+              <div className="absolute inset-0 flex items-center justify-center bg-zinc-200 dark:bg-zinc-800">
+                <div className="text-6xl font-black opacity-20 text-[var(--brand-color)]">
+                  {tool.name.charAt(0)}
+                </div>
               </div>
-            </div>
-            <img 
-              src={`https://image.thum.io/get/width/600/crop/800/${tool.site}`} 
-              alt={tool.name} 
-              className="relative z-0 w-full h-full object-cover scale-105 group-hover:scale-110 transition-transform duration-700 ease-out opacity-90 group-hover:opacity-100"
-              onError={(e) => { e.target.style.display = 'none'; }}
-            />
-            <div className="absolute z-10 inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent opacity-80 group-hover:opacity-60 transition-opacity duration-300" />
-          </>
-        )}
-        <div className="absolute z-20 top-4 left-4 flex gap-2">
-          <span 
-            className="px-3 py-1 text-xs font-bold border shadow-sm backdrop-blur-md bg-white/90 dark:bg-zinc-900/90 text-[var(--brand-color)]"
-            style={{ borderRadius: theme?.radiusButton || '8px', borderColor: theme ? `${theme.primary}40` : undefined }}
-          >
-            {tool.category}
-          </span>
-        </div>
-        <div className="absolute z-20 top-4 right-4">
-          {getTierBadge(tool.tier)}
+              <img 
+                src={`https://image.thum.io/get/width/600/crop/800/${tool.site}`} 
+                alt={tool.name} 
+                className="relative z-0 w-full h-full object-cover scale-[1.02] group-hover/card:scale-105 transition-transform duration-700 ease-out opacity-90 group-hover/card:opacity-100"
+                onError={(e) => { e.target.style.display = 'none'; }}
+              />
+            </>
+          )}
+          
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity duration-500" />
+          <div className="absolute inset-0 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.08)] dark:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)] rounded-[18px] pointer-events-none" />
+
+          <div className="absolute z-20 top-3 left-3 flex gap-2">
+            <span 
+              className="px-2.5 py-1 text-[11px] font-semibold backdrop-blur-md bg-black/20 dark:bg-white/10 text-white rounded-lg border border-white/10"
+            >
+              {tool.category}
+            </span>
+          </div>
+          <div className="absolute z-20 top-3 right-3">
+            {getTierBadge(tool.tier)}
+          </div>
         </div>
       </div>
       
       <div 
-        className={cn("p-6 flex-1 flex flex-col relative", theme ? "" : "bg-white dark:bg-zinc-900")}
-        style={theme ? { borderTop: `1px solid ${theme.border}` } : {}}
+        className="px-5 pb-5 pt-2 flex-1 flex flex-col relative w-full"
       >
-        <div 
-          className={cn(
-            "absolute -top-6 right-6 w-12 h-12 shadow-lg flex items-center justify-center overflow-hidden z-10 group-hover:-translate-y-1 transition-transform duration-300",
-            theme ? "" : "bg-white dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-700 rounded-xl"
-          )}
-          style={theme ? { backgroundColor: theme.bg, border: `1px solid ${theme.border}`, borderRadius: theme.radiusButton } : {}}
-        >
+        <div className="flex items-center gap-3 mb-2">
           {tool.favicon ? (
-            <img src={tool.favicon} alt={`${tool.name} favicon`} className="w-8 h-8 object-contain drop-shadow-md" style={{ borderRadius: theme ? theme.radiusButton : '8px' }} />
+            <img src={tool.favicon} alt={`${tool.name} favicon`} className="w-5 h-5 object-contain rounded-[4px] shadow-sm" />
           ) : (
-            <span className="text-xl font-bold text-[var(--brand-color)]">{tool.name.charAt(0)}</span>
+            <span className="w-5 h-5 flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 rounded-[4px] text-[10px] font-bold text-[var(--brand-color)]">
+              {tool.name.charAt(0)}
+            </span>
           )}
-        </div>
-
-        <div className="flex items-center gap-3 mb-3 pr-14">
-          <h3 className="text-xl font-bold group-hover:opacity-80 transition-colors" style={{ fontFamily: theme?.fontHeading, color: theme ? theme.text : undefined }}>
+          <h3 className="text-[17px] font-bold group-hover/card:opacity-80 transition-colors" style={{ fontFamily: theme?.fontHeading, color: theme ? theme.text : undefined }}>
             {tool.name}
           </h3>
         </div>
-        <p className="text-sm line-clamp-2 leading-relaxed" style={{ opacity: 0.75, color: theme ? theme.text : undefined }}>
+        <p className="text-[13px] line-clamp-2 leading-relaxed" style={{ opacity: 0.6, color: theme ? theme.text : undefined }}>
           {tool.description}
         </p>
         <div className="mt-auto pt-4 flex items-center justify-between">
           <span 
-            className="text-xs font-semibold px-2.5 py-1.5"
-            style={{ borderRadius: theme?.radiusButton || '8px', backgroundColor: theme ? `${theme.border}40` : (isDarkMode ? '#27272a' : '#f4f4f5'), color: theme ? theme.text : undefined }}
+            className="text-[11px] font-medium px-2.5 py-1 rounded-md"
+            style={{ backgroundColor: theme ? `${theme.border}40` : (isDarkMode ? '#27272a' : '#f4f4f5'), color: theme ? theme.text : undefined }}
           >
             {tool.type}
           </span>
-          <span className="text-xs font-semibold opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center gap-1" style={{ color: theme ? theme.primary : undefined }}>
+          <span className="text-[12px] font-bold opacity-0 -translate-x-2 group-hover/card:opacity-100 group-hover/card:translate-x-0 transition-all duration-300 flex items-center gap-1" style={{ color: theme ? theme.primary : 'var(--brand-color)' }}>
             자세히 보기 <ArrowUpRight size={14} />
           </span>
         </div>
@@ -319,7 +345,7 @@ function ToolCard({ tool, onClick, getThemeColorClass, viewMode, darkMode }) {
       {tool._adminMode && (
         <button
           onClick={(e) => { e.stopPropagation(); tool._onEdit(tool); }}
-          className="absolute top-4 left-4 z-30 p-2 rounded-full bg-blue-500 text-white shadow-lg hover:scale-110 transition-transform"
+          className="absolute top-4 right-4 z-30 p-2 rounded-full bg-blue-500 text-white shadow-lg hover:scale-110 transition-transform"
         >
           <Pencil size={14} />
         </button>
@@ -428,37 +454,17 @@ export default function App() {
       alert("DESIGN.md 텍스트를 먼저 붙여넣어 주세요.");
       return;
     }
-    const md = editingTool.designMd;
-    const hexColors = md.match(/#[0-9A-Fa-f]{6}/g) || [];
-    let primary = editingTool.designToken?.primaryColor || "#3b82f6";
-    let bg = editingTool.designToken?.backgroundColor || "#ffffff";
-    let text = editingTool.designToken?.textColor || "#000000";
-    
-    const bgMatch = md.match(/Background[^#\n]*(#[0-9A-Fa-f]{6})/i);
-    if (bgMatch) bg = bgMatch[1];
-    else if (hexColors.length >= 2) bg = hexColors[1];
-
-    const textMatch = md.match(/Text[^#\n]*(#[0-9A-Fa-f]{6})/i);
-    if (textMatch) text = textMatch[1];
-
-    const ctaMatch = md.match(/CTA[^#\n]*(#[0-9A-Fa-f]{6})/i);
-    if (ctaMatch) primary = ctaMatch[1];
-    else if (hexColors.length >= 1) primary = hexColors[0];
-    
-    // Find font family from CSS variable definition
-    const fontMatch = md.match(/--font-[a-z-]+:\s*(?:'|")?([^'",;]+)(?:'|")?/i) || md.match(/(?:Font|Typography).*?(?:'|")([^'"]+)(?:'|")/i);
-    let font = editingTool.designToken?.fontFamily || "system-ui, sans-serif";
-    if (fontMatch) font = fontMatch[1];
+    const extracted = parseDesignSystem(editingTool.designMd);
 
     setEditingTool({
       ...editingTool,
       designToken: {
         ...(editingTool.designToken || {}),
-        primaryColor: primary,
-        backgroundColor: bg,
-        textColor: text,
-        fontFamily: font,
-        buttonStyle: `bg-[${primary}] text-white px-4 py-2 rounded-lg shadow-sm hover:opacity-90`
+        primaryColor: extracted.primary,
+        backgroundColor: extracted.bg,
+        textColor: extracted.text,
+        fontFamily: extracted.fontBody || "system-ui, sans-serif",
+        buttonStyle: `bg-[${extracted.primary}] text-white px-4 py-2 rounded-lg shadow-sm hover:opacity-90`
       }
     });
     alert('DESIGN.md에서 색상과 폰트를 추출하여 디자인 토큰에 적용했습니다!\n아래 세부 설정 칸에서 미세조정(수정)도 가능합니다.');
