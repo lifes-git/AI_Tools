@@ -3,11 +3,21 @@ import { Moon, Sun, Search, ArrowUpRight, X, LayoutGrid, List, Network, Settings
 import { cn } from './lib/utils'
 import toolsData from './data/tools.json'
 
+const getMediaUrl = (url) => {
+  if (!url) return url;
+  if (url.startsWith('http') || url.startsWith('//') || url.startsWith('data:')) return url;
+  if (url.startsWith('/')) {
+    const base = import.meta.env.BASE_URL || '/';
+    return base.endsWith('/') ? base + url.slice(1) : base + '/' + url.slice(1);
+  }
+  return url;
+};
+
 const getEmbedUrl = (url, isBackground = false) => {
   if (!url) return url;
-  let finalUrl = url;
+  let finalUrl = getMediaUrl(url);
   
-  const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&?]+)/);
+  const ytMatch = finalUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&?]+)/);
   if (ytMatch && ytMatch[1]) {
     finalUrl = `https://www.youtube.com/embed/${ytMatch[1]}?`;
   }
@@ -201,7 +211,7 @@ function ToolCard({ tool, onClick, getThemeColorClass, viewMode, darkMode }) {
           tool.thumbnailMedia.match(/\.(mp4|webm)$/i) ? (
             <>
               <video
-                src={tool.thumbnailMedia}
+                src={getMediaUrl(tool.thumbnailMedia)}
                 autoPlay
                 muted
                 loop
@@ -232,7 +242,7 @@ function ToolCard({ tool, onClick, getThemeColorClass, viewMode, darkMode }) {
           ) : (
             <>
               <img 
-                src={tool.thumbnailMedia} 
+                src={getMediaUrl(tool.thumbnailMedia)} 
                 alt={tool.name} 
                 className="relative z-0 w-full h-full object-cover scale-105 group-hover:scale-110 transition-transform duration-700 ease-out opacity-90 group-hover:opacity-100"
               />
@@ -755,7 +765,7 @@ export default function App() {
                                 item.url.match(/\.(mp4|webm)$/i) ? (
                                   <video 
                                     key={mIdx} 
-                                    src={item.url} 
+                                    src={getMediaUrl(item.url)} 
                                     controls
                                     className="w-full shadow-2xl"
                                     style={{
@@ -830,7 +840,7 @@ export default function App() {
                                 ) : (
                                   <img 
                                     key={mIdx} 
-                                    src={item.url} 
+                                    src={getMediaUrl(item.url)} 
                                     alt="" 
                                     className="w-full shadow-2xl"
                                     style={{
