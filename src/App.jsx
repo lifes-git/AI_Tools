@@ -5,12 +5,11 @@ import toolsData from './data/tools.json'
 
 const getMediaUrl = (url) => {
   if (!url) return url;
-  if (url.startsWith('http') || url.startsWith('//') || url.startsWith('data:')) return url;
-  if (url.startsWith('/')) {
-    const base = import.meta.env.BASE_URL || '/';
-    return base.endsWith('/') ? base + url.slice(1) : base + '/' + url.slice(1);
-  }
-  return url;
+  if (url.startsWith('http') || url.startsWith('//') || url.startsWith('data:') || url.startsWith('blob:')) return url;
+  
+  const base = import.meta.env.BASE_URL || '/';
+  const cleanUrl = url.startsWith('/') ? url.slice(1) : url;
+  return base.endsWith('/') ? base + cleanUrl : base + '/' + cleanUrl;
 };
 
 const getEmbedUrl = (url, isBackground = false) => {
@@ -243,7 +242,7 @@ function ToolCard({ tool, onClick, getThemeColorClass, viewMode, darkMode }) {
           className={cn("relative w-full aspect-[4/3] sm:h-[180px] overflow-hidden rounded-[18px]", theme ? "" : "bg-zinc-100 dark:bg-zinc-800")}
         >
           {tool.thumbnailMedia ? (
-            tool.thumbnailMedia.match(/\.(mp4|webm)$/i) ? (
+            tool.thumbnailMedia.match(/\.(mp4|webm|mov|ogg)$/i) ? (
               <>
                 <video
                   src={getMediaUrl(tool.thumbnailMedia)}
@@ -768,7 +767,7 @@ export default function App() {
                           {useCase.media && (
                             <div className="grid gap-8 mt-4">
                               {useCase.media.map((item, mIdx) => (
-                                item.url.match(/\.(mp4|webm)$/i) ? (
+                                item.url.match(/\.(mp4|webm|mov|ogg)$/i) ? (
                                   <video 
                                     key={mIdx} 
                                     src={getMediaUrl(item.url)} 
