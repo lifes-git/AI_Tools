@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { Moon, Sun, Search, ArrowUpRight, X, LayoutGrid, List, Network, Settings, Pencil, Save, RefreshCw } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { Moon, Sun, Search, ArrowUpRight, X, LayoutGrid, List, Network, Settings, Pencil, Save, RefreshCw, ChevronDown, Filter, Flame, Sparkles } from 'lucide-react'
 import { cn } from './lib/utils'
 import toolsData from './data/tools.json'
 
@@ -135,7 +135,8 @@ const parseDesignSystem = (md) => {
     radiusCard: radiusCardMatch ? radiusCardMatch[1] : '24px',
     radiusButton: radiusButtonMatch ? radiusButtonMatch[1] : '8px',
     fontHeading: fontHeading,
-    fontBody: fontBody
+    fontBody: fontBody,
+    isDarkBg: bgLum < 128
   };
 };
 
@@ -144,8 +145,8 @@ function ToolCard({ tool, onClick, getThemeColorClass, viewMode, darkMode }) {
   const isDarkMode = theme?.theme === 'light' ? false : (theme?.theme === 'dark' ? true : darkMode);
 
   const getTierBadge = (tier) => {
-    if (tier === '필수') return <span className="flex items-center gap-1 bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 px-2 py-0.5 rounded text-[11px] font-bold shadow-sm border border-red-200 dark:border-red-800/50">필수</span>
-    if (tier === '심화') return <span className="flex items-center gap-1 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 px-2 py-0.5 rounded text-[11px] font-bold shadow-sm border border-blue-200 dark:border-blue-800/50">심화</span>
+    if (tier === '핫') return <span className="flex items-center gap-1 bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400 px-2 py-0.5 rounded-md text-[11px] font-bold shadow-sm border border-red-200/60 dark:border-red-800/40"><Flame size={12} /> 핫</span>
+    if (tier === '주목할 신규') return <span className="flex items-center gap-1 bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 px-2 py-0.5 rounded-md text-[11px] font-bold shadow-sm border border-blue-200/60 dark:border-blue-800/40"><Sparkles size={12} /> 주목할 신규</span>
     return null
   }
 
@@ -162,13 +163,13 @@ function ToolCard({ tool, onClick, getThemeColorClass, viewMode, darkMode }) {
         )}
         style={theme ? {
           backgroundColor: isDarkMode && theme.theme !== 'dark' ? '#121212' : theme.bg,
-          color: isDarkMode && theme.theme !== 'dark' ? '#ffffff' : theme.text,
+          color: isDarkMode && theme.theme !== 'dark' ? '#ffffff' : (theme.isDarkBg ? '#ffffff' : '#000000'),
           borderColor: theme.border,
-          borderRadius: theme.radiusCard,
+          borderRadius: '24px',
           fontFamily: theme.fontBody,
           '--brand-color': theme.primary
         } : {
-          borderRadius: '16px',
+          borderRadius: '24px',
           borderColor: 'rgba(128,128,128,0.2)',
           '--brand-color': tool.themeColor ? 'var(--tw-colors-blue-500)' : '#3b82f6'
         }}
@@ -178,10 +179,10 @@ function ToolCard({ tool, onClick, getThemeColorClass, viewMode, darkMode }) {
             "w-12 h-12 flex-shrink-0 flex items-center justify-center overflow-hidden",
             theme ? "" : "bg-zinc-100 dark:bg-zinc-800 rounded-xl"
           )}
-          style={theme ? { borderRadius: theme.radiusButton, backgroundColor: `${theme.border}40` } : {}}
+          style={theme ? { backgroundColor: `${theme.border}40` } : {}}
         >
           {tool.favicon ? (
-            <img src={tool.favicon} alt="favicon" className="w-8 h-8 object-contain" style={{ borderRadius: theme ? theme.radiusButton : '6px' }} />
+            <img src={tool.favicon} alt="favicon" className="w-8 h-8 object-contain" style={{ borderRadius: '6px' }} />
           ) : (
             <span className="font-bold text-[var(--brand-color)]">{tool.name.charAt(0)}</span>
           )}
@@ -189,12 +190,12 @@ function ToolCard({ tool, onClick, getThemeColorClass, viewMode, darkMode }) {
         
         <div className="flex-1 min-w-0 flex flex-col justify-center">
           <div className="flex items-center gap-2">
-            <h3 className="text-lg font-bold truncate group-hover:opacity-80 transition-opacity" style={{ fontFamily: theme?.fontHeading, color: theme ? theme.text : undefined }}>
+            <h3 className="text-lg font-bold truncate group-hover:opacity-80 transition-opacity" style={{ fontFamily: theme?.fontHeading }}>
               {tool.name}
             </h3>
             {getTierBadge(tool.tier)}
           </div>
-          <p className="text-sm truncate mt-0.5" style={{ opacity: 0.7, color: theme ? theme.text : undefined }}>
+          <p className="text-sm truncate mt-0.5" style={{ opacity: 0.7 }}>
             {tool.description}
           </p>
         </div>
@@ -202,15 +203,9 @@ function ToolCard({ tool, onClick, getThemeColorClass, viewMode, darkMode }) {
         <div className="hidden sm:flex items-center gap-3">
           <span 
             className="px-2.5 py-1 text-xs font-semibold border"
-            style={{ borderRadius: theme?.radiusButton || '6px', borderColor: `${theme?.primary || '#3b82f6'}40`, color: theme ? theme.primary : undefined }}
+            style={{ borderRadius: '6px', borderColor: `${theme?.primary || '#3b82f6'}40`, color: theme ? theme.primary : undefined }}
           >
             {tool.category}
-          </span>
-          <span 
-            className="text-xs font-medium px-2 py-1"
-            style={{ borderRadius: theme?.radiusButton || '6px', backgroundColor: theme ? `${theme.border}40` : (isDarkMode ? '#27272a' : '#f4f4f5'), color: theme ? theme.text : undefined }}
-          >
-            {tool.type}
           </span>
         </div>
       </button>
@@ -227,7 +222,7 @@ function ToolCard({ tool, onClick, getThemeColorClass, viewMode, darkMode }) {
       )}
       style={theme ? {
         backgroundColor: isDarkMode && theme.theme !== 'dark' ? '#121212' : theme.bg,
-        color: isDarkMode && theme.theme !== 'dark' ? '#ffffff' : theme.text,
+        color: isDarkMode && theme.theme !== 'dark' ? '#ffffff' : (theme.isDarkBg ? '#ffffff' : '#000000'),
         borderColor: theme.border,
         borderRadius: '24px',
         fontFamily: theme.fontBody,
@@ -329,13 +324,7 @@ function ToolCard({ tool, onClick, getThemeColorClass, viewMode, darkMode }) {
         <p className="text-[13px] line-clamp-2 leading-relaxed" style={{ opacity: 0.6, color: theme ? theme.text : undefined }}>
           {tool.description}
         </p>
-        <div className="mt-auto pt-4 flex items-center justify-between">
-          <span 
-            className="text-[11px] font-medium px-2.5 py-1 rounded-md"
-            style={{ backgroundColor: theme ? `${theme.border}40` : (isDarkMode ? '#27272a' : '#f4f4f5'), color: theme ? theme.text : undefined }}
-          >
-            {tool.type}
-          </span>
+        <div className="mt-auto pt-4 flex items-center justify-end">
           <span className="text-[12px] font-bold opacity-0 -translate-x-2 group-hover/card:opacity-100 group-hover/card:translate-x-0 transition-all duration-300 flex items-center gap-1" style={{ color: theme ? theme.primary : 'var(--brand-color)' }}>
             자세히 보기 <ArrowUpRight size={14} />
           </span>
@@ -364,6 +353,18 @@ export default function App() {
   const [editingTool, setEditingTool] = useState(null)
   const [toolsState, setToolsState] = useState(toolsData)
   const [isSaving, setIsSaving] = useState(false)
+  const [isCategoryOpen, setIsCategoryOpen] = useState(false)
+  const dropdownRef = useRef(null)
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsCategoryOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
 
   useEffect(() => {
     if (darkMode) {
@@ -546,25 +547,44 @@ export default function App() {
             />
           </div>
           
-          <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-            <div className="flex gap-2 overflow-x-auto pb-2 sm:pb-0 w-full sm:w-auto hide-scrollbar">
-              {categories.map(cat => (
-                <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat)}
-                  className={cn(
-                    "whitespace-nowrap px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-sm border",
-                    selectedCategory === cat 
-                      ? "bg-zinc-900 text-white border-zinc-900 dark:bg-white dark:text-zinc-900 dark:border-white" 
-                      : "bg-white/80 text-zinc-600 border-zinc-200/80 hover:bg-white dark:bg-zinc-900/80 dark:text-zinc-400 dark:border-zinc-800 dark:hover:bg-zinc-800 backdrop-blur-md"
-                  )}
-                >
-                  {cat}
-                </button>
-              ))}
+          <div className="flex flex-col sm:flex-row justify-between items-center w-full gap-4 relative z-40">
+            {/* Category Dropdown */}
+            <div className="relative w-full sm:w-auto" ref={dropdownRef}>
+              <button
+                onClick={() => setIsCategoryOpen(!isCategoryOpen)}
+                className="w-full sm:w-auto flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md shadow-sm font-bold text-zinc-700 dark:text-zinc-200 hover:bg-white dark:hover:bg-zinc-800 transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <Filter size={16} className="text-zinc-400 dark:text-zinc-500" />
+                  <span>{selectedCategory === "전체" ? "모든 카테고리" : selectedCategory}</span>
+                </div>
+                <ChevronDown size={18} className={cn("transition-transform duration-200", isCategoryOpen ? "rotate-180" : "")} />
+              </button>
+              
+              {isCategoryOpen && (
+                <div className="absolute top-full left-0 mt-2 w-full sm:w-56 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xl rounded-xl overflow-hidden flex flex-col max-h-96 overflow-y-auto z-50">
+                  {categories.map(cat => (
+                    <button
+                      key={cat}
+                      onClick={() => {
+                        setSelectedCategory(cat);
+                        setIsCategoryOpen(false);
+                      }}
+                      className={cn(
+                        "w-full text-left px-4 py-3 text-sm font-medium transition-colors border-b border-zinc-100 dark:border-zinc-800/50 last:border-0",
+                        selectedCategory === cat 
+                          ? "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-bold" 
+                          : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                      )}
+                    >
+                      {cat === "전체" ? "모든 카테고리" : cat}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
-            <div className="flex bg-white/80 dark:bg-zinc-900/80 p-1 rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 backdrop-blur-md shadow-sm self-end sm:self-auto">
+            <div className="flex bg-white/80 dark:bg-zinc-900/80 p-1 rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 backdrop-blur-md shadow-sm">
               <button 
                 onClick={() => setViewMode('grid')}
                 className={cn("p-2 rounded-lg transition-colors", viewMode === 'grid' ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white" : "text-zinc-500 hover:text-zinc-900 dark:hover:text-white")}
@@ -596,13 +616,22 @@ export default function App() {
               const catTools = filteredTools.filter(t => t.category === cat);
               if (catTools.length === 0) return null;
               
-              let bgClass = "bg-zinc-100 dark:bg-zinc-800";
-              let textClass = "text-zinc-900 dark:text-white";
-              if (cat === '필수 AI') { bgClass = "bg-emerald-100 dark:bg-emerald-900/40"; textClass = "text-emerald-800 dark:text-emerald-300"; }
-              else if (cat === '디자인/이미지 생성' || cat === '이미지') { bgClass = "bg-blue-100 dark:bg-blue-900/40"; textClass = "text-blue-800 dark:text-blue-300"; }
-              else if (cat === '문서/기획/업무' || cat === '문서/기획') { bgClass = "bg-purple-100 dark:bg-purple-900/40"; textClass = "text-purple-800 dark:text-purple-300"; }
-              else if (cat === '영상/음성 제작' || cat === '비디오' || cat === '오디오') { bgClass = "bg-orange-100 dark:bg-orange-900/40"; textClass = "text-orange-800 dark:text-orange-300"; }
-              else if (cat === '개발/업무 자동화' || cat === '코딩/자동화') { bgClass = "bg-rose-100 dark:bg-rose-900/40"; textClass = "text-rose-800 dark:text-rose-300"; }
+              const colorMaps = {
+                '대화형 LLM': { bg: 'bg-emerald-100 dark:bg-emerald-900/40', text: 'text-emerald-800 dark:text-emerald-300' },
+                '검색 & 리서치': { bg: 'bg-teal-100 dark:bg-teal-900/40', text: 'text-teal-800 dark:text-teal-300' },
+                '문서 & 기획': { bg: 'bg-purple-100 dark:bg-purple-900/40', text: 'text-purple-800 dark:text-purple-300' },
+                '이미지 생성': { bg: 'bg-blue-100 dark:bg-blue-900/40', text: 'text-blue-800 dark:text-blue-300' },
+                '디자인 & UI': { bg: 'bg-indigo-100 dark:bg-indigo-900/40', text: 'text-indigo-800 dark:text-indigo-300' },
+                '비디오 생성': { bg: 'bg-orange-100 dark:bg-orange-900/40', text: 'text-orange-800 dark:text-orange-300' },
+                '비디오 편집': { bg: 'bg-red-100 dark:bg-red-900/40', text: 'text-red-800 dark:text-red-300' },
+                '오디오 & 음성': { bg: 'bg-yellow-100 dark:bg-yellow-900/40', text: 'text-yellow-800 dark:text-yellow-300' },
+                '음악 생성': { bg: 'bg-amber-100 dark:bg-amber-900/40', text: 'text-amber-800 dark:text-amber-300' },
+                'AI 코딩': { bg: 'bg-rose-100 dark:bg-rose-900/40', text: 'text-rose-800 dark:text-rose-300' },
+                '업무 자동화': { bg: 'bg-cyan-100 dark:bg-cyan-900/40', text: 'text-cyan-800 dark:text-cyan-300' }
+              };
+              const mapping = colorMaps[cat] || { bg: 'bg-zinc-100 dark:bg-zinc-800', text: 'text-zinc-900 dark:text-white' };
+              const bgClass = mapping.bg;
+              const textClass = mapping.text;
               
               return (
                 <div key={cat} className="rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 bg-white/60 dark:bg-zinc-900/60 backdrop-blur-md overflow-hidden shadow-sm flex flex-col h-full animate-fade-in-up">
@@ -1200,6 +1229,8 @@ export default function App() {
           </div>
         </div>
       )}
+      
+
       
       <style dangerouslySetInnerHTML={{__html: `
         .hide-scrollbar::-webkit-scrollbar {
