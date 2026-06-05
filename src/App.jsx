@@ -6,7 +6,7 @@ import toolsData from './data/tools.json'
 const getMediaUrl = (url) => {
   if (!url) return url;
   if (url.startsWith('http') || url.startsWith('//') || url.startsWith('data:') || url.startsWith('blob:')) return url;
-  
+
   const base = import.meta.env.BASE_URL || '/';
   const cleanUrl = url.startsWith('/') ? url.slice(1) : url;
   return base.endsWith('/') ? base + cleanUrl : base + '/' + cleanUrl;
@@ -15,7 +15,7 @@ const getMediaUrl = (url) => {
 const getEmbedUrl = (url, isBackground = false) => {
   if (!url) return url;
   let finalUrl = getMediaUrl(url);
-  
+
   const ytMatch = finalUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&?]+)/);
   if (ytMatch && ytMatch[1]) {
     finalUrl = `https://www.youtube.com/embed/${ytMatch[1]}?`;
@@ -29,7 +29,7 @@ const getEmbedUrl = (url, isBackground = false) => {
       finalUrl += `&playlist=${ytEmbedMatch[1]}`;
     }
   }
-  
+
   return finalUrl;
 }
 
@@ -174,7 +174,7 @@ function ToolCard({ tool, onClick, getThemeColorClass, viewMode, darkMode }) {
           '--brand-color': tool.themeColor ? 'var(--tw-colors-blue-500)' : '#3b82f6'
         }}
       >
-        <div 
+        <div
           className={cn(
             "w-12 h-12 flex-shrink-0 flex items-center justify-center overflow-hidden",
             theme ? "" : "bg-zinc-100 dark:bg-zinc-800 rounded-xl"
@@ -187,7 +187,7 @@ function ToolCard({ tool, onClick, getThemeColorClass, viewMode, darkMode }) {
             <span className="font-bold text-[var(--brand-color)]">{tool.name.charAt(0)}</span>
           )}
         </div>
-        
+
         <div className="flex-1 min-w-0 flex flex-col justify-center">
           <div className="flex items-center gap-2">
             <h3 className="text-lg font-bold truncate group-hover:opacity-80 transition-opacity" style={{ fontFamily: theme?.fontHeading }}>
@@ -201,7 +201,7 @@ function ToolCard({ tool, onClick, getThemeColorClass, viewMode, darkMode }) {
         </div>
 
         <div className="hidden sm:flex items-center gap-3">
-          <span 
+          <span
             className="px-2.5 py-1 text-xs font-semibold border"
             style={{ borderRadius: '6px', borderColor: `${theme?.primary || '#3b82f6'}40`, color: theme ? theme.primary : undefined }}
           >
@@ -233,7 +233,7 @@ function ToolCard({ tool, onClick, getThemeColorClass, viewMode, darkMode }) {
       }}
     >
       <div className="p-2 w-full">
-        <div 
+        <div
           className={cn("relative w-full aspect-[4/3] sm:h-[180px] overflow-hidden rounded-[18px]", theme ? "" : "bg-zinc-100 dark:bg-zinc-800")}
         >
           {tool.thumbnailMedia ? (
@@ -265,11 +265,32 @@ function ToolCard({ tool, onClick, getThemeColorClass, viewMode, darkMode }) {
                   style={{ pointerEvents: 'none' }}
                 />
               </>
+            ) : tool.thumbnailMedia.trim().startsWith('<') ? (
+              <div
+                className="w-full h-full flex justify-center items-center overflow-hidden scale-[1.02] group-hover/card:scale-105 transition-transform duration-700 ease-out bg-white/50 dark:bg-black/50"
+                dangerouslySetInnerHTML={{ __html: tool.thumbnailMedia }}
+                ref={(el) => {
+                  if (el && tool.thumbnailMedia.includes('platform.x.com/widgets.js')) {
+                    if (window.twttr && window.twttr.widgets) {
+                      window.twttr.widgets.load(el);
+                    } else if (!document.getElementById('twitter-wjs')) {
+                      const script = document.createElement('script');
+                      script.id = 'twitter-wjs';
+                      script.src = 'https://platform.x.com/widgets.js';
+                      script.async = true;
+                      document.body.appendChild(script);
+                      script.onload = () => {
+                        if (window.twttr && window.twttr.widgets) window.twttr.widgets.load(el);
+                      };
+                    }
+                  }
+                }}
+              />
             ) : (
               <>
-                <img 
-                  src={getMediaUrl(tool.thumbnailMedia)} 
-                  alt={tool.name} 
+                <img
+                  src={getMediaUrl(tool.thumbnailMedia)}
+                  alt={tool.name}
                   className="relative z-0 w-full h-full object-cover scale-[1.02] group-hover/card:scale-105 transition-transform duration-700 ease-out"
                 />
               </>
@@ -281,20 +302,20 @@ function ToolCard({ tool, onClick, getThemeColorClass, viewMode, darkMode }) {
                   {tool.name.charAt(0)}
                 </div>
               </div>
-              <img 
-                src={`https://image.thum.io/get/width/600/crop/800/${tool.site}`} 
-                alt={tool.name} 
+              <img
+                src={`https://image.thum.io/get/width/600/crop/800/${tool.site}`}
+                alt={tool.name}
                 className="relative z-0 w-full h-full object-cover scale-[1.02] group-hover/card:scale-105 transition-transform duration-700 ease-out opacity-90 group-hover/card:opacity-100"
                 onError={(e) => { e.target.style.display = 'none'; }}
               />
             </>
           )}
-          
+
           <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity duration-500" />
           <div className="absolute inset-0 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.08)] dark:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)] rounded-[18px] pointer-events-none" />
 
           <div className="absolute z-20 top-3 left-3 flex gap-2">
-            <span 
+            <span
               className="px-2.5 py-1 text-[11px] font-semibold backdrop-blur-md bg-black/20 dark:bg-white/10 text-white rounded-lg border border-white/10"
             >
               {tool.category}
@@ -305,8 +326,8 @@ function ToolCard({ tool, onClick, getThemeColorClass, viewMode, darkMode }) {
           </div>
         </div>
       </div>
-      
-      <div 
+
+      <div
         className="px-5 pb-5 pt-2 flex-1 flex flex-col relative w-full"
       >
         <div className="flex items-center gap-3 mb-2">
@@ -378,12 +399,12 @@ export default function App() {
 
   const filteredTools = toolsState.filter(tool => {
     const searchStr = searchQuery.toLowerCase();
-    const matchesSearch = tool.name.toLowerCase().includes(searchStr) || 
-                          tool.description.toLowerCase().includes(searchStr) ||
-                          (tool.keywords && tool.keywords.toLowerCase().includes(searchStr));
+    const matchesSearch = tool.name.toLowerCase().includes(searchStr) ||
+      tool.description.toLowerCase().includes(searchStr) ||
+      (tool.keywords && tool.keywords.toLowerCase().includes(searchStr));
     const matchesCategory = selectedCategory === "전체" || tool.category === selectedCategory
     return matchesSearch && matchesCategory
-  }).map(t => ({...t, _adminMode: isAdminMode, _onEdit: setEditingTool}))
+  }).map(t => ({ ...t, _adminMode: isAdminMode, _onEdit: setEditingTool }))
 
   const getThemeColorClass = (color) => {
     const map = {
@@ -402,23 +423,23 @@ export default function App() {
     setIsSaving(true)
     // Check if tool already exists (update) or is new (add)
     const exists = toolsState.find(t => t.id === updatedTool.id)
-    const newTools = exists 
+    const newTools = exists
       ? toolsState.map(t => t.id === updatedTool.id ? updatedTool : t)
       : [updatedTool, ...toolsState]
-    
+
     try {
       const res = await fetch('/api/save-tools', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newTools)
       })
-      if(res.ok) {
+      if (res.ok) {
         setToolsState(newTools)
         setEditingTool(null)
       } else {
         alert('저장에 실패했습니다.')
       }
-    } catch(err) {
+    } catch (err) {
       alert('서버 오류: ' + err.message)
     } finally {
       setIsSaving(false)
@@ -426,23 +447,23 @@ export default function App() {
   }
 
   const handleDeleteTool = async (id) => {
-    if(!window.confirm('이 툴을 정말 삭제하시겠습니까?')) return;
+    if (!window.confirm('이 툴을 정말 삭제하시겠습니까?')) return;
     setIsSaving(true)
     const newTools = toolsState.filter(t => t.id !== id)
-    
+
     try {
       const res = await fetch('/api/save-tools', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newTools)
       })
-      if(res.ok) {
+      if (res.ok) {
         setToolsState(newTools)
         setEditingTool(null)
       } else {
         alert('삭제에 실패했습니다.')
       }
-    } catch(err) {
+    } catch (err) {
       alert('서버 오류: ' + err.message)
     } finally {
       setIsSaving(false)
@@ -450,7 +471,7 @@ export default function App() {
   }
 
   const handleExtractDesign = () => {
-    if(!editingTool.designMd) {
+    if (!editingTool.designMd) {
       alert("DESIGN.md 텍스트를 먼저 붙여넣어 주세요.");
       return;
     }
@@ -500,7 +521,7 @@ export default function App() {
   return (
     <div className="min-h-screen font-sans bg-[#f8f9fc] dark:bg-zinc-950 transition-colors relative">
       <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 pointer-events-none mix-blend-overlay"></div>
-      
+
       <header className="sticky top-0 z-40 backdrop-blur-xl bg-white/60 dark:bg-zinc-950/60 border-b border-zinc-200/50 dark:border-zinc-800/50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <h1 className="text-xl font-bold tracking-tight bg-gradient-to-r from-zinc-900 to-zinc-600 dark:from-white dark:to-zinc-400 bg-clip-text text-transparent">
@@ -546,7 +567,7 @@ export default function App() {
               className="w-full pl-12 pr-4 py-4 rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all text-zinc-900 dark:text-zinc-50 shadow-lg shadow-zinc-200/20 dark:shadow-none text-lg"
             />
           </div>
-          
+
           <div className="flex flex-col sm:flex-row justify-between items-center w-full gap-4 relative z-40">
             {/* Category Dropdown */}
             <div className="relative w-full sm:w-auto" ref={dropdownRef}>
@@ -560,7 +581,7 @@ export default function App() {
                 </div>
                 <ChevronDown size={18} className={cn("transition-transform duration-200", isCategoryOpen ? "rotate-180" : "")} />
               </button>
-              
+
               {isCategoryOpen && (
                 <div className="absolute top-full left-0 mt-2 w-full sm:w-56 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xl rounded-xl overflow-hidden flex flex-col max-h-96 overflow-y-auto z-50">
                   {categories.map(cat => (
@@ -572,8 +593,8 @@ export default function App() {
                       }}
                       className={cn(
                         "w-full text-left px-4 py-3 text-sm font-medium transition-colors border-b border-zinc-100 dark:border-zinc-800/50 last:border-0",
-                        selectedCategory === cat 
-                          ? "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-bold" 
+                        selectedCategory === cat
+                          ? "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-bold"
                           : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800"
                       )}
                     >
@@ -585,21 +606,21 @@ export default function App() {
             </div>
 
             <div className="flex bg-white/80 dark:bg-zinc-900/80 p-1 rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 backdrop-blur-md shadow-sm">
-              <button 
+              <button
                 onClick={() => setViewMode('grid')}
                 className={cn("p-2 rounded-lg transition-colors", viewMode === 'grid' ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white" : "text-zinc-500 hover:text-zinc-900 dark:hover:text-white")}
                 title="Grid View"
               >
                 <LayoutGrid size={18} />
               </button>
-              <button 
+              <button
                 onClick={() => setViewMode('list')}
                 className={cn("p-2 rounded-lg transition-colors", viewMode === 'list' ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white" : "text-zinc-500 hover:text-zinc-900 dark:hover:text-white")}
                 title="List View"
               >
                 <List size={18} />
               </button>
-              <button 
+              <button
                 onClick={() => setViewMode('map')}
                 className={cn("p-2 rounded-lg transition-colors", viewMode === 'map' ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white" : "text-zinc-500 hover:text-zinc-900 dark:hover:text-white")}
                 title="Map View"
@@ -615,7 +636,7 @@ export default function App() {
             {categories.filter(c => c !== "전체").map(cat => {
               const catTools = filteredTools.filter(t => t.category === cat);
               if (catTools.length === 0) return null;
-              
+
               const colorMaps = {
                 '대화형 LLM': { bg: 'bg-emerald-100 dark:bg-emerald-900/40', text: 'text-emerald-800 dark:text-emerald-300' },
                 '검색 & 리서치': { bg: 'bg-teal-100 dark:bg-teal-900/40', text: 'text-teal-800 dark:text-teal-300' },
@@ -632,7 +653,7 @@ export default function App() {
               const mapping = colorMaps[cat] || { bg: 'bg-zinc-100 dark:bg-zinc-800', text: 'text-zinc-900 dark:text-white' };
               const bgClass = mapping.bg;
               const textClass = mapping.text;
-              
+
               return (
                 <div key={cat} className="rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 bg-white/60 dark:bg-zinc-900/60 backdrop-blur-md overflow-hidden shadow-sm flex flex-col h-full animate-fade-in-up">
                   <div className={cn("px-5 py-3.5 font-bold border-b border-zinc-200/80 dark:border-zinc-800/80 text-lg flex justify-between items-center", bgClass, textClass)}>
@@ -640,7 +661,7 @@ export default function App() {
                   </div>
                   <div className="p-5 flex flex-wrap gap-2.5">
                     {catTools.map(tool => (
-                      <button 
+                      <button
                         key={tool.id}
                         onClick={() => setSelectedTool(tool)}
                         className="flex items-center gap-2 px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 hover:-translate-y-0.5 hover:shadow-md transition-all shadow-sm"
@@ -661,29 +682,29 @@ export default function App() {
         ) : viewMode === 'grid' ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
             {filteredTools.map((tool) => (
-              <ToolCard 
-                key={tool.id} 
-                tool={tool} 
-                onClick={setSelectedTool} 
+              <ToolCard
+                key={tool.id}
+                tool={tool}
+                onClick={setSelectedTool}
                 getThemeColorClass={getThemeColorClass}
                 viewMode="grid"
-              darkMode={darkMode} />
+                darkMode={darkMode} />
             ))}
           </div>
         ) : (
           <div className="flex flex-col gap-3 max-w-4xl mx-auto">
             {filteredTools.map((tool) => (
-              <ToolCard 
-                key={tool.id} 
-                tool={tool} 
-                onClick={setSelectedTool} 
+              <ToolCard
+                key={tool.id}
+                tool={tool}
+                onClick={setSelectedTool}
                 getThemeColorClass={getThemeColorClass}
                 viewMode="list"
-              darkMode={darkMode} />
+                darkMode={darkMode} />
             ))}
           </div>
         )}
-        
+
         {filteredTools.length === 0 && (
           <div className="py-20 text-center text-zinc-500 font-medium">
             검색 결과가 없습니다.
@@ -694,7 +715,7 @@ export default function App() {
       {/* Custom Design Tool Detail Modal */}
       {selectedTool && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-6 sm:py-12">
-          <div 
+          <div
             className="absolute inset-0 bg-black/60 backdrop-blur-md animate-blur-in"
             onClick={() => setSelectedTool(null)}
           />
@@ -703,7 +724,7 @@ export default function App() {
             const isDarkMode = theme?.theme === 'light' ? false : (theme?.theme === 'dark' ? true : darkMode);
 
             return (
-              <div 
+              <div
                 className={cn(
                   "relative w-full h-full sm:h-auto sm:max-h-[85vh] max-w-4xl overflow-y-auto flex flex-col",
                   theme ? "animate-fade-in-up" : "shadow-2xl sm:rounded-3xl animate-fade-in-up"
@@ -722,7 +743,7 @@ export default function App() {
                   borderRadius: '24px'
                 }}
               >
-                <div 
+                <div
                   className="sticky top-0 z-10 px-6 py-4 flex items-center justify-between"
                   style={theme ? {
                     backgroundColor: isDarkMode ? 'rgba(18,18,18,0.9)' : `${theme.bg}ee`,
@@ -746,20 +767,20 @@ export default function App() {
                       {selectedTool.name}
                     </h2>
                   </div>
-                  <button 
+                  <button
                     onClick={() => setSelectedTool(null)}
                     className="p-2.5 rounded-full hover:bg-black/10 transition-colors"
                   >
                     <X size={20} />
                   </button>
                 </div>
-                
+
                 <div className="p-6 sm:p-12 flex-1">
                   <div className="max-w-3xl">
                     <p className="text-xl opacity-90 mb-10 leading-relaxed font-medium" style={{ color: 'inherit' }}>
                       {selectedTool.description}
                     </p>
-                    <a 
+                    <a
                       href={selectedTool.site}
                       target="_blank"
                       rel="noopener noreferrer"
@@ -782,7 +803,7 @@ export default function App() {
 
                   {selectedTool.useCases && selectedTool.useCases.length > 0 && selectedTool.useCases[0].media && selectedTool.useCases[0].media[0].url && (
                     <div className="mt-16 space-y-8 animate-fade-in-up">
-                      <h3 
+                      <h3
                         className="text-2xl font-bold pb-4 opacity-90"
                         style={{ borderBottom: `1px solid ${theme?.border || 'rgba(128,128,128,0.2)'}`, fontFamily: theme?.fontHeading, color: theme ? theme.text : undefined }}
                       >
@@ -797,9 +818,9 @@ export default function App() {
                             <div className="grid gap-8 mt-4">
                               {useCase.media.map((item, mIdx) => (
                                 item.url.match(/\.(mp4|webm|mov|ogg)$/i) ? (
-                                  <video 
-                                    key={mIdx} 
-                                    src={getMediaUrl(item.url)} 
+                                  <video
+                                    key={mIdx}
+                                    src={getMediaUrl(item.url)}
                                     controls
                                     className="w-full shadow-2xl"
                                     style={{
@@ -808,9 +829,9 @@ export default function App() {
                                     }}
                                   />
                                 ) : item.url.match(/vimeo\.com|youtube\.com|youtu\.be/i) ? (
-                                  <div 
-                                    key={mIdx} 
-                                    className="relative w-full aspect-video shadow-2xl" 
+                                  <div
+                                    key={mIdx}
+                                    className="relative w-full aspect-video shadow-2xl"
                                     style={{
                                       borderRadius: theme?.radiusCard || '24px',
                                       border: `1px solid ${theme?.border || 'rgba(128,128,128,0.2)'}`,
@@ -839,6 +860,40 @@ export default function App() {
                                       className="absolute inset-0 w-full h-full border-0"
                                     />
                                   </div>
+                                ) : item.url.trim().startsWith('<') ? (
+                                  <div
+                                    key={mIdx}
+                                    className="w-full flex justify-center overflow-hidden"
+                                    style={{
+                                      borderRadius: theme?.radiusCard || '24px',
+                                      border: `1px solid ${theme?.border || 'rgba(128,128,128,0.2)'}`,
+                                      backgroundColor: theme ? `${theme.border}15` : 'rgba(0,0,0,0.02)',
+                                      padding: '16px'
+                                    }}
+                                  >
+                                    <div
+                                      className="w-full flex justify-center"
+                                      dangerouslySetInnerHTML={{ __html: item.url }}
+                                      ref={(el) => {
+                                        if (el && item.url.includes('platform.x.com/widgets.js')) {
+                                          if (window.twttr && window.twttr.widgets) {
+                                            window.twttr.widgets.load(el);
+                                          } else if (!document.getElementById('twitter-wjs')) {
+                                            const script = document.createElement('script');
+                                            script.id = 'twitter-wjs';
+                                            script.src = 'https://platform.x.com/widgets.js';
+                                            script.async = true;
+                                            document.body.appendChild(script);
+                                            script.onload = () => {
+                                              if (window.twttr && window.twttr.widgets) {
+                                                window.twttr.widgets.load(el);
+                                              }
+                                            };
+                                          }
+                                        }
+                                      }}
+                                    />
+                                  </div>
                                 ) : item.url.match(/^https?:\/\//i) && !item.url.match(/\.(jpg|jpeg|png|gif|webp|svg|bmp)$/i) ? (
                                   <a
                                     key={mIdx}
@@ -862,7 +917,7 @@ export default function App() {
                                         src={`https://www.google.com/s2/favicons?domain=${new URL(item.url).hostname}&sz=64`}
                                         alt=""
                                         className="w-8 h-8 object-contain"
-                                        onError={(e) => { e.target.style.display='none'; }}
+                                        onError={(e) => { e.target.style.display = 'none'; }}
                                       />
                                     </div>
                                     <div className="flex-1 min-w-0">
@@ -872,10 +927,10 @@ export default function App() {
                                     <ArrowUpRight size={16} style={{ opacity: 0.5, flexShrink: 0 }} />
                                   </a>
                                 ) : (
-                                  <img 
-                                    key={mIdx} 
-                                    src={getMediaUrl(item.url)} 
-                                    alt="" 
+                                  <img
+                                    key={mIdx}
+                                    src={getMediaUrl(item.url)}
+                                    alt=""
                                     className="w-full shadow-2xl"
                                     style={{
                                       borderRadius: theme?.radiusCard || '24px',
@@ -921,7 +976,7 @@ export default function App() {
                                       src={`https://www.google.com/s2/favicons?domain=${(() => { try { return new URL(link.url).hostname } catch { return '' } })()}&sz=32`}
                                       alt=""
                                       className="w-4 h-4 object-contain"
-                                      onError={(e) => { e.target.style.display='none'; }}
+                                      onError={(e) => { e.target.style.display = 'none'; }}
                                     />
                                     {link.title || link.url}
                                     <ArrowUpRight size={13} />
@@ -950,7 +1005,7 @@ export default function App() {
                                         src={`https://www.google.com/s2/favicons?domain=${(() => { try { return new URL(link.url).hostname } catch { return '' } })()}&sz=64`}
                                         alt=""
                                         className="w-8 h-8 object-contain"
-                                        onError={(e) => { e.target.style.display='none'; }}
+                                        onError={(e) => { e.target.style.display = 'none'; }}
                                       />
                                     </div>
                                     <div className="flex-1 min-w-0">
@@ -969,7 +1024,7 @@ export default function App() {
                       ))}
                     </div>
                   )}
-                  
+
 
                 </div>
               </div>
@@ -986,32 +1041,32 @@ export default function App() {
             <h2 className="text-2xl font-bold mb-6 text-zinc-900 dark:text-white flex items-center gap-2">
               <Pencil size={24} className="text-blue-500" /> 데이터 수정 ({editingTool.name})
             </h2>
-            
+
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-1">이름</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={editingTool.name}
-                  onChange={(e) => setEditingTool({...editingTool, name: e.target.value})}
+                  onChange={(e) => setEditingTool({ ...editingTool, name: e.target.value })}
                   className="w-full px-4 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
                 />
               </div>
               <div>
                 <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-1">설명</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={editingTool.description}
-                  onChange={(e) => setEditingTool({...editingTool, description: e.target.value})}
+                  onChange={(e) => setEditingTool({ ...editingTool, description: e.target.value })}
                   className="w-full px-4 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
                 />
               </div>
               <div>
                 <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-1">검색 키워드 (쉼표 구분)</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={editingTool.keywords || ''}
-                  onChange={(e) => setEditingTool({...editingTool, keywords: e.target.value})}
+                  onChange={(e) => setEditingTool({ ...editingTool, keywords: e.target.value })}
                   placeholder="예: 클로드, 챗지피티, 제미나이"
                   className="w-full px-4 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
                 />
@@ -1019,40 +1074,40 @@ export default function App() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-1">카테고리</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={editingTool.category}
-                    onChange={(e) => setEditingTool({...editingTool, category: e.target.value})}
+                    onChange={(e) => setEditingTool({ ...editingTool, category: e.target.value })}
                     className="w-full px-4 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-1">등급 (필수/심화/일반)</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={editingTool.tier}
-                    onChange={(e) => setEditingTool({...editingTool, tier: e.target.value})}
+                    onChange={(e) => setEditingTool({ ...editingTool, tier: e.target.value })}
                     className="w-full px-4 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
                   />
                 </div>
               </div>
               <div>
                 <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-1">사이트 주소 (URL)</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={editingTool.site}
-                  onChange={(e) => setEditingTool({...editingTool, site: e.target.value})}
+                  onChange={(e) => setEditingTool({ ...editingTool, site: e.target.value })}
                   className="w-full px-4 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-1">썸네일 영상/이미지 (URL)</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={editingTool.thumbnailMedia || ''}
-                  onChange={(e) => setEditingTool({...editingTool, thumbnailMedia: e.target.value})}
-                  placeholder="예: https://.../demo.mp4 (입력 시 캡처 대신 이 미디어가 재생됩니다)"
+                  onChange={(e) => setEditingTool({ ...editingTool, thumbnailMedia: e.target.value })}
+                  placeholder="예: https://.../demo.mp4 또는 <blockquote class=\'twitter-tweet\'>... (임베드 코드 입력 가능)"
                   className="w-full px-4 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
                 />
               </div>
@@ -1063,39 +1118,39 @@ export default function App() {
 
                 </div>
                 <div>
-                  <textarea 
+                  <textarea
                     rows={4}
                     value={editingTool.designMd || ''}
-                    onChange={(e) => setEditingTool({...editingTool, designMd: e.target.value})}
+                    onChange={(e) => setEditingTool({ ...editingTool, designMd: e.target.value })}
                     placeholder="Refero 사이트 등에서 복사한 DESIGN.md 텍스트를 이곳에 붙여넣어주세요."
                     className="w-full px-4 py-2 rounded-lg border border-blue-200 dark:border-blue-800 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none text-xs font-mono resize-none"
                   />
                 </div>
-                
+
 
               </div>
               <div className="space-y-4 pt-4 border-t border-zinc-200 dark:border-zinc-800">
                 <div className="flex items-center justify-between">
                   <h4 className="text-sm font-bold text-zinc-900 dark:text-white">실제 활용 사례</h4>
-                  <button 
+                  <button
                     onClick={() => {
                       const newUseCases = [...(editingTool.useCases || [])];
                       newUseCases.push({ title: "활용 사례", description: "", media: [{ type: "image", url: "" }] });
-                      setEditingTool({...editingTool, useCases: newUseCases});
+                      setEditingTool({ ...editingTool, useCases: newUseCases });
                     }}
                     className="text-xs font-bold text-blue-600 hover:text-blue-700 px-2 py-1 rounded bg-blue-50 dark:bg-blue-900/30"
                   >
                     + 사례 추가
                   </button>
                 </div>
-                
+
                 {editingTool.useCases?.map((useCase, idx) => (
                   <div key={idx} className="p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50 relative">
-                    <button 
+                    <button
                       onClick={() => {
                         const newUseCases = [...editingTool.useCases];
                         newUseCases.splice(idx, 1);
-                        setEditingTool({...editingTool, useCases: newUseCases});
+                        setEditingTool({ ...editingTool, useCases: newUseCases });
                       }}
                       className="absolute top-2 right-2 text-xs text-red-500 hover:text-red-700 font-bold p-2"
                     >
@@ -1104,28 +1159,28 @@ export default function App() {
                     <div className="space-y-3 pt-2">
                       <div>
                         <label className="block text-xs font-bold text-zinc-600 dark:text-zinc-400 mb-1">활용 영상/이미지 URL</label>
-                        <input 
-                          type="text" 
+                        <input
+                          type="text"
                           value={useCase.media?.[0]?.url || ''}
                           onChange={(e) => {
                             const newUseCases = [...editingTool.useCases];
-                            if(!newUseCases[idx].media) newUseCases[idx].media = [{ type: "image", url: "" }];
+                            if (!newUseCases[idx].media) newUseCases[idx].media = [{ type: "image", url: "" }];
                             newUseCases[idx].media[0].url = e.target.value;
-                            setEditingTool({...editingTool, useCases: newUseCases});
+                            setEditingTool({ ...editingTool, useCases: newUseCases });
                           }}
-                          placeholder="예: https://example.com/demo.mp4"
+                          placeholder="예: https://example.com/demo.mp4 또는 X(트위터) 임베드 코드(<blockquote...)"
                           className="w-full px-4 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm"
                         />
                       </div>
                       <div>
                         <label className="block text-xs font-bold text-zinc-600 dark:text-zinc-400 mb-1">활용 설명</label>
-                        <textarea 
+                        <textarea
                           rows={3}
                           value={useCase.description || ''}
                           onChange={(e) => {
                             const newUseCases = [...editingTool.useCases];
                             newUseCases[idx].description = e.target.value;
-                            setEditingTool({...editingTool, useCases: newUseCases});
+                            setEditingTool({ ...editingTool, useCases: newUseCases });
                           }}
                           placeholder="이 툴을 실제로 어떻게 활용했는지 설명해주세요."
                           className="w-full px-4 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm resize-none"
@@ -1139,7 +1194,7 @@ export default function App() {
                               const newUseCases = [...editingTool.useCases];
                               if (!newUseCases[idx].links) newUseCases[idx].links = [];
                               newUseCases[idx].links.push({ url: "", type: "bookmark", title: "" });
-                              setEditingTool({...editingTool, useCases: newUseCases});
+                              setEditingTool({ ...editingTool, useCases: newUseCases });
                             }}
                             className="text-[10px] font-bold bg-zinc-200 dark:bg-zinc-700 px-2 py-1 rounded"
                           >
@@ -1153,7 +1208,7 @@ export default function App() {
                               onChange={(e) => {
                                 const newUseCases = [...editingTool.useCases];
                                 newUseCases[idx].links[lIdx].type = e.target.value;
-                                setEditingTool({...editingTool, useCases: newUseCases});
+                                setEditingTool({ ...editingTool, useCases: newUseCases });
                               }}
                               className="text-xs bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded px-1 py-1"
                             >
@@ -1168,7 +1223,7 @@ export default function App() {
                               onChange={(e) => {
                                 const newUseCases = [...editingTool.useCases];
                                 newUseCases[idx].links[lIdx].title = e.target.value;
-                                setEditingTool({...editingTool, useCases: newUseCases});
+                                setEditingTool({ ...editingTool, useCases: newUseCases });
                               }}
                               className="w-24 sm:w-32 shrink-0 text-xs px-2 py-1 border border-zinc-200 dark:border-zinc-700 rounded bg-zinc-50 dark:bg-zinc-900"
                             />
@@ -1179,7 +1234,7 @@ export default function App() {
                               onChange={(e) => {
                                 const newUseCases = [...editingTool.useCases];
                                 newUseCases[idx].links[lIdx].url = e.target.value;
-                                setEditingTool({...editingTool, useCases: newUseCases});
+                                setEditingTool({ ...editingTool, useCases: newUseCases });
                               }}
                               className="flex-1 min-w-[150px] text-xs px-2 py-1 border border-zinc-200 dark:border-zinc-700 rounded bg-zinc-50 dark:bg-zinc-900"
                             />
@@ -1187,7 +1242,7 @@ export default function App() {
                               onClick={() => {
                                 const newUseCases = [...editingTool.useCases];
                                 newUseCases[idx].links.splice(lIdx, 1);
-                                setEditingTool({...editingTool, useCases: newUseCases});
+                                setEditingTool({ ...editingTool, useCases: newUseCases });
                               }}
                               className="text-red-500 font-bold text-xs px-2"
                             >
@@ -1203,20 +1258,20 @@ export default function App() {
             </div>
 
             <div className="mt-8 flex justify-between items-center">
-              <button 
+              <button
                 onClick={() => handleDeleteTool(editingTool.id)}
                 className="px-4 py-2 rounded-xl font-bold text-red-600 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors"
               >
                 삭제
               </button>
               <div className="flex gap-3">
-                <button 
+                <button
                   onClick={() => setEditingTool(null)}
                   className="px-5 py-2 rounded-xl font-bold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
                 >
                   취소
                 </button>
-                <button 
+                <button
                   onClick={() => handleSaveTool(editingTool)}
                   disabled={isSaving}
                   className="px-5 py-2 rounded-xl font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/30 transition-all flex items-center gap-2 disabled:opacity-50"
@@ -1229,10 +1284,11 @@ export default function App() {
           </div>
         </div>
       )}
-      
 
-      
-      <style dangerouslySetInnerHTML={{__html: `
+
+
+      <style dangerouslySetInnerHTML={{
+        __html: `
         .hide-scrollbar::-webkit-scrollbar {
           display: none;
         }
